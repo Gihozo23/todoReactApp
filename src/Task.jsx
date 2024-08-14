@@ -6,18 +6,47 @@ function Task() {
   const [tasks, setTasks] = useState([]);
   const [visible, setVisible] = useState(false);
 
+  useEffect(() => {
+    const storedTasks = localStorage.getItem("tasks");
+    if (storedTasks) {
+      try {
+        const parsedTasks = JSON.parse(storedTasks);
+        if (Array.isArray(parsedTasks)) {
+          setTasks(parsedTasks);
+          setVisible(parsedTasks.length > 0);
+        }
+      } catch (error) {
+        console.error("Failed to parse tasks from local storage:", error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tasks.length > 0) {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+  }, [tasks]);
+
   function handleSubmit(event) {
     event.preventDefault();
-    if (inputRef.current.value.trim() !== "") {
-      setTasks((prevTasks) => [...prevTasks, inputRef.current.value]);
-
+    const newTask = inputRef.current.value.trim();
+    if (newTask !== "") {
+      setTasks((prevTasks) => {
+        const updatedTasks = [...prevTasks, newTask];
+        inputRef.current.value = ""; // Clear input field
+        return updatedTasks;
+      });
       setVisible(true);
     }
   }
 
-  useEffect(() => {
-    console.log(tasks);
-  }, [tasks]);
+  function handleDelete(index) {
+    setTasks((prevTasks) => {
+      const updatedTasks = [...prevTasks];
+      updatedTasks.splice(index, 1);
+      return updatedTasks;
+    });
+  }
 
   return (
     <div className="max-w-lg mx-auto mt-10">
@@ -45,13 +74,7 @@ function Task() {
               key={index}
               index={index}
               task={task}
-              handleDelete={(index) =>
-                setTasks((prevTasks) => {
-                  const updatedTasks = [...prevTasks];
-                  updatedTasks.splice(index, 1);
-                  return updatedTasks;
-                })
-              }
+              handleDelete={() => handleDelete(index)}
             />
           ))}
       </div>
